@@ -1,5 +1,5 @@
 require("dotenv").config();
-const { Client, GatewayIntentBits } = require("discord.js");
+const { Client, GatewayIntentBits, ActivityType } = require("discord.js");
 const {
   joinVoiceChannel,
   VoiceConnectionStatus,
@@ -62,6 +62,18 @@ async function joinAndStay(voiceChannel, textChannel) {
 
 client.once("ready", () => {
   console.log(`🤖 Bot aktif & global sebagai: ${client.user.tag}`);
+
+  // Set Custom Status pada profil bot
+  client.user.setPresence({
+    activities: [
+      {
+        name: "custom",
+        type: ActivityType.Custom,
+        state: "BLAZE Official Discord Server", // Ganti sesuai teks status yang kamu inginkan
+      },
+    ],
+    status: "online",
+  });
 });
 
 client.on("messageCreate", async (message) => {
