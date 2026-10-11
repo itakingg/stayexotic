@@ -69,7 +69,7 @@ client.once("ready", () => {
       {
         name: "custom",
         type: ActivityType.Custom,
-        state: "BLAZE Official Discord Server", // Ganti sesuai teks status yang kamu inginkan
+        state: "🌐rfexoticwar.com", // Ganti sesuai teks status yang kamu inginkan
       },
     ],
     status: "online",
