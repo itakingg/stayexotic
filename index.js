@@ -28,7 +28,10 @@ async function joinAndStay(voiceChannel, textChannel) {
       selfMute: false,
     });
 
-    activeConnections.set(voiceChannel.guild.id, connection);
+    activeConnections.set(voiceChannel.guild.id, {
+      connection,
+      channel: voiceChannel,
+    });
 
     if (textChannel) {
       textChannel.send(
@@ -36,7 +39,7 @@ async function joinAndStay(voiceChannel, textChannel) {
       );
     }
 
-    // Auto-reconnect per server
+    // Auto-reconnect per server jika jaringan terputus
     connection.on(VoiceConnectionStatus.Disconnected, async () => {
       console.warn(
         `⚠️ Koneksi terputus di [${voiceChannel.guild.name}] - ${voiceChannel.name}`,
@@ -69,11 +72,30 @@ client.once("ready", () => {
       {
         name: "custom",
         type: ActivityType.Custom,
-        state: "🌐rfexoticwar.com", // Ganti sesuai teks status yang kamu inginkan
+        state: "RFEXOTICWAR.COM", // Teks status di profil
       },
     ],
     status: "online",
   });
+});
+
+// Menjaga bot agar otomatis rejoin jika ditendang (kicked) dari voice channel
+client.on("voiceStateUpdate", (oldState, newState) => {
+  if (oldState.member?.id === client.user.id) {
+    // Jika bot berada di channel lalu terputus / ditendang
+    if (oldState.channelId && !newState.channelId) {
+      const activeData = activeConnections.get(oldState.guild.id);
+      // Jika pelepasan koneksi bukan karena command !leave
+      if (activeData) {
+        console.warn(
+          `⚠️ Bot ditendang dari ${oldState.channel.name}, mencoba masuk kembali...`,
+        );
+        setTimeout(() => {
+          joinAndStay(oldState.channel, null);
+        }, 3000);
+      }
+    }
+  }
 });
 
 client.on("messageCreate", async (message) => {
@@ -92,10 +114,11 @@ client.on("messageCreate", async (message) => {
   }
 
   if (message.content === "!leave") {
-    const connection = activeConnections.get(message.guild.id);
-    if (connection) {
-      connection.destroy();
+    const activeData = activeConnections.get(message.guild.id);
+    if (activeData) {
+      // Hapus data dari map terlebih dahulu agar event voiceStateUpdate tidak memicu auto-rejoin
       activeConnections.delete(message.guild.id);
+      activeData.connection.destroy();
       message.reply("👋 Bot telah keluar dari voice channel.");
     } else {
       message.reply(
